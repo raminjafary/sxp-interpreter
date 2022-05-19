@@ -1,0 +1,58 @@
+// Runtime semantics
+// 
+// Exp ::=   Number
+//         | String
+//         | [+ Exp Exp]
+//         | [var name, Exp]
+//         | [set name, Exp]
+//         | name
+//         | [begin Exp]
+//         ;
+
+//-----------------------------------
+// S-expression parser (Lexical grammar)
+// Atom: 42, "hello", x, y
+// List: (), (+ 5 x), (print "Hi")
+//-----------------------------------
+
+%lex
+
+%%
+
+\s+             /* skip whitespace */
+
+\"[^\"]*\"      return 'STRING'
+
+\d+             return 'NUMBER'
+
+[\w\-+*=<>/]+   return 'SYMBOL'
+
+
+/lex
+
+//-----------------------------------
+// Syntactic grammar (parser).
+//-----------------------------------
+
+%%
+
+Exp
+  : Atom
+  | List
+  ;
+
+Atom
+   : NUMBER { $$ = Number($1) } // Semantic action block
+   | STRING
+   | SYMBOL
+   ;
+
+List
+   : '(' ListEntries ')' { $$ = $2 }
+   ;
+
+
+ListEntries
+   : ListEntries Exp {$1.push($2); $$ = $1 }
+   | /* empty */ { $$ = [] }
+   ;
