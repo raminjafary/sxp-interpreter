@@ -27,6 +27,11 @@ class Sxp {
         if (exp[0] === '>') {
             return this.eval(exp[1], env) > this.eval(exp[2], env)
         }
+
+        if (exp[0] === '<') {
+            return this.eval(exp[1], env) < this.eval(exp[2], env)
+        }
+
         // var
         if (exp[0] === 'var') {
             const [_, name, value] = exp
@@ -55,6 +60,19 @@ class Sxp {
             }
             return this.eval(alternate, env)
         }
+
+        if (exp[0] === 'while') {
+            const [_tag, condition, body] = exp
+
+            let result = null
+
+            while (this.eval(condition, env)) {
+                result = this.eval(body, env)
+            }
+
+            return result
+        }
+
 
         throw `Unimplemented: "${JSON.stringify(exp)}"`
     }
@@ -154,5 +172,19 @@ assert.strictEqual(sxp.eval(
         "y"
     ]
 ), 50)
+
+assert.strictEqual(sxp.eval(
+    ['begin',
+        ["var", "counter", 10],
+        ["var", "i", 0],
+        ["while", ["<", "i", 20],
+            ["begin",
+                ["set", "counter", ["+", "counter", 1]],
+                ["set", "i", ["+", "counter", 1]],
+            ]
+        ],
+        "i"
+    ]
+), 20)
 
 console.log("All assertins are passed!");
