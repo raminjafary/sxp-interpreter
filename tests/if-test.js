@@ -1,5 +1,4 @@
 const assert = require("assert");
-const sxpParser = require("./test-parser");
 
 module.exports = function (sxp) {
   assert.strictEqual(

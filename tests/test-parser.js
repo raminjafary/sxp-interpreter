@@ -1,5 +1,5 @@
 const assert = require("assert");
-const sxpParser = require("../parser/sxpParser");
+const sxpParser = require("../src/parser/sxpParser");
 
 function test(sxp, code, expected) {
   const exp = sxpParser.parse(code);
