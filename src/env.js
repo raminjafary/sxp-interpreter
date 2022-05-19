@@ -3,8 +3,6 @@ module.exports = class Env {
     constructor(record, parent) {
         this.record = record
         this.parent = parent
-        console.log(this.record);
-        console.log(this.parent);
     }
 
     define(name, value) {

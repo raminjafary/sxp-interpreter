@@ -9,7 +9,7 @@ class Sxp {
 
     eval(exp, env = this.env) {
 
-        // self-evaluating exp
+        // self-eval exp
         if (isNumber(exp)) {
             return exp
         }
@@ -23,6 +23,10 @@ class Sxp {
             return this.eval(exp[1], env) + this.eval(exp[2], env)
         }
 
+        // comparasion operators
+        if (exp[0] === '>') {
+            return this.eval(exp[1], env) > this.eval(exp[2], env)
+        }
         // var
         if (exp[0] === 'var') {
             const [_, name, value] = exp
@@ -42,6 +46,17 @@ class Sxp {
             const parentEnv = new Env({}, env)
             return this.evalBlock(exp, parentEnv)
         }
+
+        if (exp[0] === 'if') {
+            const [_tag, condition, consequsnt, alternate] = exp
+
+            if (this.eval(condition, env)) {
+                return this.eval(consequsnt, env)
+            }
+            return this.eval(alternate, env)
+        }
+
+        throw `Unimplemented: "${JSON.stringify(exp)}"`
     }
 
     evalBlock(exp, env) {
@@ -126,5 +141,18 @@ assert.strictEqual(sxp.eval(
         "result"
     ]
 ), 20)
+
+
+assert.strictEqual(sxp.eval(
+    ['begin',
+        ["var", "x", 10],
+        ["var", "y", 25],
+        ["if", [">", "x", 20],
+            ["set", "y", 30],
+            ["set", "y", 50],
+        ],
+        "y"
+    ]
+), 50)
 
 console.log("All assertins are passed!");
