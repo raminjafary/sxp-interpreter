@@ -10,11 +10,9 @@ class Sxp {
     eval(exp, env = this.env) {
 
         // self-evaluating exp
-
         if (isNumber(exp)) {
             return exp
         }
-
 
         if (isString(exp)) {
             return exp.slice(1, -1)
@@ -22,19 +20,40 @@ class Sxp {
 
         // math exp
         if (exp[0] === '+') {
-            return this.eval(exp[1]) + this.eval(exp[2])
+            return this.eval(exp[1], env) + this.eval(exp[2], env)
         }
-
 
         // var
         if (exp[0] === 'var') {
             const [_, name, value] = exp
-            return env.define(name, this.eval(value))
+            return env.define(name, this.eval(value, env))
         }
 
         if (isVariableName(exp)) {
             return env.lookup(exp)
         }
+
+        if (exp[0] === 'set') {
+            const [_, name, value] = exp
+            return env.assign(name, this.eval(value, env))
+        }
+
+        if (exp[0] === 'begin') {
+            const parentEnv = new Env({}, env)
+            return this.evalBlock(exp, parentEnv)
+        }
+    }
+
+    evalBlock(exp, env) {
+        let result = null
+
+        const [_tag, ...expressions] = exp
+
+        expressions.forEach(exp => {
+            result = this.eval(exp, env)
+        });
+
+        return result
     }
 }
 
@@ -67,5 +86,45 @@ assert.strictEqual(sxp.eval(["var", "x", 14]), 14)
 assert.strictEqual(sxp.eval("x"), 14)
 assert.strictEqual(sxp.eval(["var", "y", 'true']), true)
 assert.strictEqual(sxp.eval("y"), true)
+
+assert.strictEqual(sxp.eval(
+    ['begin',
+        ["var", "x", 10],
+        "x"
+    ]
+), 10)
+
+assert.strictEqual(sxp.eval(
+    ['begin',
+        ["var", "x", 10],
+        ["begin",
+            ["var", "x", 20],
+            "x"
+        ],
+        "x"
+    ]
+), 10)
+
+assert.strictEqual(sxp.eval(
+    ['begin',
+        ["var", "x", 10],
+        ["var", "result", ["begin",
+            ["var", "y", ["+", "x", 20]],
+            "y"
+        ]],
+        "result"
+    ]
+), 30)
+
+
+assert.strictEqual(sxp.eval(
+    ['begin',
+        ["var", "result", 10],
+        ["begin",
+            ['set', 'result', 20]
+        ],
+        "result"
+    ]
+), 20)
 
 console.log("All assertins are passed!");
