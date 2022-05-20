@@ -8,6 +8,7 @@ const tests = [
   require("./var-test"),
   require("./while-test"),
   require("./builtins-test"),
+  require("./functions-test"),
 ];
 
 const sxp = new Sxp();

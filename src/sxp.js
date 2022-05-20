@@ -55,6 +55,18 @@ module.exports = class Sxp {
       return result;
     }
 
+    if (exp[0] === "def") {
+      const [_tag, name, params, body] = exp;
+
+      const fn = {
+        params,
+        body,
+        env,
+      };
+
+      return env.define(name, fn);
+    }
+
     if (Array.isArray(exp)) {
       const fn = this.eval(exp[0], env);
 
@@ -63,9 +75,26 @@ module.exports = class Sxp {
       if (typeof fn === "function") {
         return fn(...args);
       }
+
+      const activationRecords = {};
+
+      fn.params.forEach((param, index) => {
+        activationRecords[param] = args[index];
+      });
+
+      const activationEnv = new Env(activationRecords, fn.env);
+
+      return this.evalBody(fn.body, activationEnv);
     }
 
     throw `Unimplemented: "${JSON.stringify(exp)}"`;
+  }
+
+  evalBody(exp, env) {
+    if (exp[0] === "begin") {
+      return this.evalBlock(exp, env);
+    }
+    return this.eval(exp, env);
   }
 
   evalBlock(exp, env) {
