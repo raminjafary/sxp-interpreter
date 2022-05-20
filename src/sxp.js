@@ -89,6 +89,12 @@ module.exports = class Sxp {
       return this.eval(ifExp, env);
     }
 
+    if (exp[0] === "for") {
+      const whileExp = this.transformer.transformForToWhile(exp);
+
+      return this.eval(whileExp, env);
+    }
+
     if (Array.isArray(exp)) {
       const fn = this.eval(exp[0], env);
 

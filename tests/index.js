@@ -11,6 +11,7 @@ const tests = [
   require("./functions-test"),
   require("./lambda-test"),
   require("./switch-test"),
+  require("./for-test"),
 ];
 
 const sxp = new Sxp();
