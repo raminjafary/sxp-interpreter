@@ -1,8 +1,10 @@
 const Env = require("./env");
+const Transformer = require("./transformer");
 
 module.exports = class Sxp {
   constructor(env = globalEnv) {
     this.globalEnv = env;
+    this.transformer = new Transformer();
   }
 
   eval(exp, env = this.globalEnv) {
@@ -76,9 +78,15 @@ module.exports = class Sxp {
       // return env.define(name, fn);
 
       //JIT-trasnpile to variable declaration!
-      const varExp = ["var", name, ["lambda", params, body]];
+      const varExp = this.transformer.transformDefToVarLambda(exp);
 
       return this.eval(varExp, env);
+    }
+
+    if (exp[0] === "switch") {
+      const ifExp = this.transformer.transformSwitchToIf(exp);
+
+      return this.eval(ifExp, env);
     }
 
     if (Array.isArray(exp)) {

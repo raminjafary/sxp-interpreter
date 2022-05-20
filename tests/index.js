@@ -10,6 +10,7 @@ const tests = [
   require("./builtins-test"),
   require("./functions-test"),
   require("./lambda-test"),
+  require("./switch-test"),
 ];
 
 const sxp = new Sxp();
