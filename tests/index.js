@@ -9,6 +9,7 @@ const tests = [
   require("./while-test"),
   require("./builtins-test"),
   require("./functions-test"),
+  require("./lambda-test"),
 ];
 
 const sxp = new Sxp();
