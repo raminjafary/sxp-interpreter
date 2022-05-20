@@ -1,42 +1,28 @@
 const Env = require("./env");
 
 module.exports = class Sxp {
-  constructor(env = new Env()) {
-    this.env = env;
+  constructor(env = globalEnv) {
+    this.globalEnv = env;
   }
 
-  eval(exp, env = this.env) {
+  eval(exp, env = this.globalEnv) {
     // self-eval exp
-    if (isNumber(exp)) {
+    if (this.isNumber(exp)) {
       return exp;
     }
 
-    if (isString(exp)) {
+    if (this.isString(exp)) {
       return exp.slice(1, -1);
     }
 
-    // math exp
-    if (exp[0] === "+") {
-      return this.eval(exp[1], env) + this.eval(exp[2], env);
+    if (exp[0] === "begin") {
+      const parentEnv = new Env({}, env);
+      return this.evalBlock(exp, parentEnv);
     }
 
-    // comparasion operators
-    if (exp[0] === ">") {
-      return this.eval(exp[1], env) > this.eval(exp[2], env);
-    }
-
-    if (exp[0] === "<") {
-      return this.eval(exp[1], env) < this.eval(exp[2], env);
-    }
-
-    // var
     if (exp[0] === "var") {
       const [_, name, value] = exp;
       return env.define(name, this.eval(value, env));
-    }
-
-    if (isVariableName(exp)) {
-      return env.lookup(exp);
     }
 
     if (exp[0] === "set") {
@@ -44,9 +30,8 @@ module.exports = class Sxp {
       return env.assign(name, this.eval(value, env));
     }
 
-    if (exp[0] === "begin") {
-      const parentEnv = new Env({}, env);
-      return this.evalBlock(exp, parentEnv);
+    if (this.isVariableName(exp)) {
+      return env.lookup(exp);
     }
 
     if (exp[0] === "if") {
@@ -70,6 +55,16 @@ module.exports = class Sxp {
       return result;
     }
 
+    if (Array.isArray(exp)) {
+      const fn = this.eval(exp[0], env);
+
+      const args = exp.slice(1).map((arg) => this.eval(arg, env));
+
+      if (typeof fn === "function") {
+        return fn(...args);
+      }
+    }
+
     throw `Unimplemented: "${JSON.stringify(exp)}"`;
   }
 
@@ -84,20 +79,44 @@ module.exports = class Sxp {
 
     return result;
   }
+
+  isNumber(exp) {
+    return typeof exp === "number";
+  }
+
+  isString(exp) {
+    return (
+      typeof exp === "string" &&
+      (exp[0] === '"' || exp[0] === "'") &&
+      (exp.slice(-1) === '"' || exp.slice(-1) === "'")
+    );
+  }
+
+  isVariableName(exp) {
+    return typeof exp === "string" && /^[+\-*/<>=a-zA-Z0-9_]*$/.test(exp);
+  }
 };
 
-function isNumber(exp) {
-  return typeof exp === "number";
-}
-
-function isString(exp) {
-  return (
-    typeof exp === "string" &&
-    (exp[0] === '"' || exp[0] === "'") &&
-    (exp.slice(-1) === '"' || exp.slice(-1) === "'")
-  );
-}
-
-function isVariableName(exp) {
-  return typeof exp === "string" && /^[a-zA-Z][0-9a-zA-z_]*$/.test(exp);
-}
+const globalEnv = new Env({
+  true: true,
+  false: false,
+  "+"(op1, op2) {
+    return op1 + op2;
+  },
+  "-"(op1, op2 = null) {
+    if (op2 == null) return -op1;
+    return op1 - op2;
+  },
+  "*"(op1, op2) {
+    return op1 * op2;
+  },
+  "/"(op1, op2) {
+    return op1 / op2;
+  },
+  ">"(op1, op2) {
+    return op1 > op2;
+  },
+  "<"(op1, op2) {
+    return op1 < op2;
+  },
+});

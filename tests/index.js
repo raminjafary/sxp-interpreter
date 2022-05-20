@@ -1,5 +1,4 @@
 const Sxp = require("../src/sxp");
-const Env = require("../src/env");
 
 const tests = [
   require("./math-test"),
@@ -8,14 +7,10 @@ const tests = [
   require("./self-eval-test"),
   require("./var-test"),
   require("./while-test"),
+  require("./builtins-test"),
 ];
 
-const sxp = new Sxp(
-  new Env({
-    true: true,
-    false: false,
-  })
-);
+const sxp = new Sxp();
 
 tests.forEach((t) => t(sxp));
 
