@@ -28,8 +28,17 @@ module.exports = class Sxp {
     }
 
     if (exp[0] === "set") {
-      const [_, name, value] = exp;
-      return env.assign(name, this.eval(value, env));
+      const [_, ref, value] = exp;
+
+      if (ref[0] === "prop") {
+        const [_tag, instance, propName] = ref;
+
+        const instanceEnv = this.eval(instance, env);
+
+        return instanceEnv.define(propName, this.eval(value, env));
+      }
+
+      return env.assign(ref, this.eval(value, env));
     }
 
     if (this.isVariableName(exp)) {
@@ -83,6 +92,40 @@ module.exports = class Sxp {
       return this.eval(varExp, env);
     }
 
+    if (exp[0] === "class") {
+      const [_tag, name, parent, body] = exp;
+
+      const parentEnv = this.eval(parent, env) || env;
+      const classEnv = new Env({}, parentEnv);
+
+      this.evalBody(body, classEnv);
+
+      return env.define(name, classEnv);
+    }
+
+    if (exp[0] === "new") {
+      const classEnv = this.eval(exp[1], env);
+
+      const instanceEnv = new Env({}, classEnv);
+
+      const args = exp.slice(2).map((arg) => this.eval(arg, env));
+
+      this.callDefinedFunction(classEnv.lookup("constructor"), [
+        instanceEnv,
+        ...args,
+      ]);
+
+      return instanceEnv;
+    }
+
+    if (exp[0] === "prop") {
+      const [_tag, instance, name] = exp;
+
+      const instanceEnv = this.eval(instance, env);
+
+      return instanceEnv.lookup(name);
+    }
+
     if (exp[0] === "switch") {
       const ifExp = this.transformer.transformSwitchToIf(exp);
 
@@ -103,19 +146,22 @@ module.exports = class Sxp {
       if (typeof fn === "function") {
         return fn(...args);
       }
-
-      const activationRecords = {};
-
-      fn.params.forEach((param, index) => {
-        activationRecords[param] = args[index];
-      });
-
-      const activationEnv = new Env(activationRecords, fn.env);
-
-      return this.evalBody(fn.body, activationEnv);
+      return this.callDefinedFunction(fn, args);
     }
 
     throw `Unimplemented: "${JSON.stringify(exp)}"`;
+  }
+
+  callDefinedFunction(fn, args) {
+    const activationRecords = {};
+
+    fn.params.forEach((param, index) => {
+      activationRecords[param] = args[index];
+    });
+
+    const activationEnv = new Env(activationRecords, fn.env);
+
+    return this.evalBody(fn.body, activationEnv);
   }
 
   evalBody(exp, env) {
@@ -157,6 +203,7 @@ module.exports = class Sxp {
 const globalEnv = new Env({
   true: true,
   false: false,
+  null: null,
   "+"(op1, op2) {
     return op1 + op2;
   },
