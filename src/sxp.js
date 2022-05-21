@@ -76,7 +76,7 @@ module.exports = class Sxp {
     }
 
     if (exp[0] === "def") {
-      const [_tag, name, params, body] = exp;
+      // const [_tag, name, params, body] = exp;
 
       // const fn = {
       //   params,
@@ -116,6 +116,11 @@ module.exports = class Sxp {
       ]);
 
       return instanceEnv;
+    }
+
+    if (exp[0] === "super") {
+      const [_tag, className] = exp;
+      return this.eval(className, env).parent;
     }
 
     if (exp[0] === "prop") {
@@ -162,6 +167,10 @@ module.exports = class Sxp {
     const activationEnv = new Env(activationRecords, fn.env);
 
     return this.evalBody(fn.body, activationEnv);
+  }
+
+  evalGlobal(exp) {
+    return this.evalBody(exp, this.globalEnv);
   }
 
   evalBody(exp, env) {
