@@ -1,4 +1,6 @@
+const fs = require("fs");
 const Env = require("./env");
+const sxpParser = require("./parser/sxpParser");
 const Transformer = require("./transformer");
 
 module.exports = class Sxp {
@@ -66,6 +68,21 @@ module.exports = class Sxp {
       return result;
     }
 
+    if (exp[0] === "import") {
+      const [_tag, name] = exp;
+
+      const module = fs.readFileSync(
+        `${__dirname}/modules/${name}.sxp`,
+        "utf-8"
+      );
+
+      const body = sxpParser.parse(`(begin ${module})`);
+
+      const moduleExp = ["module", name, body];
+
+      return this.eval(moduleExp, env);
+    }
+
     if (exp[0] === "lambda") {
       const [_tag, params, body] = exp;
       return {
@@ -101,6 +118,16 @@ module.exports = class Sxp {
       this.evalBody(body, classEnv);
 
       return env.define(name, classEnv);
+    }
+
+    if (exp[0] === "module") {
+      const [_tag, name, body] = exp;
+
+      const moduleEnv = new Env({}, env);
+
+      this.evalBody(body, moduleEnv);
+
+      return env.define(name, moduleEnv);
     }
 
     if (exp[0] === "new") {
