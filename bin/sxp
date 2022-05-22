@@ -1,0 +1,29 @@
+#!/usr/bin/env node
+
+const fs = require('fs')
+const sxpParser = require('../src/parser/sxpParser')
+const Sxp = require('../src/sxp')
+
+
+function evalGlobal(src, sxp) {
+    const exp = sxpParser.parse(`(begin ${src})`)
+    return sxp.evalGlobal(exp)
+
+}
+ 
+(function main (argv) {
+    const [_node, _path, mode, exp] = argv
+
+    const sxp = new Sxp()
+
+
+    if(mode === '-e') {
+        return evalGlobal(exp, sxp)
+    }
+
+
+    if(mode === '-f') {
+        const src = fs.readFileSync(exp, "utf-8")
+        return evalGlobal(src, sxp)
+    }
+})(process.argv)
